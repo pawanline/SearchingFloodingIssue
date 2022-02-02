@@ -36,7 +36,7 @@ class UserSearchViewController: UIViewController  {
 
 extension UserSearchViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        userLoader.loadUsers(matching: searchText) { [weak self] result in
+      let task =   userLoader.loadUsers(matching: searchText) { [weak self] result in
                    switch result {
                    case .success(let articles):
                        self?.articles = articles
@@ -47,6 +47,7 @@ extension UserSearchViewController: UISearchBarDelegate {
                        break
                    }
                }
+        task.cancel()
     }
 }
 
@@ -81,9 +82,8 @@ class UserLoader {
         self.urlSession = sesssion
     }
 
-    func loadUsers(matching query: String, completionHandler: @escaping (Result<[Article],PKError>) -> Void) {
+    func loadUsers(matching query: String, completionHandler: @escaping (Result<[Article],PKError>) -> Void) -> URLSessionDataTask {
         let url = requestURL(forQuery: query)
-        currentTask?.cancel()
         let task = self.urlSession.dataTask(with: url) { (data, _,error) in
             switch (data,error) {
             case(_ , let error?):
@@ -99,8 +99,10 @@ class UserLoader {
                 completionHandler(.failure(PKError(message: "fsfsdfsdf")))
             }
         }
-        currentTask = task
+        
         task.resume()
+        
+        return task
     }
     
     
